@@ -10,29 +10,23 @@ namespace WaTor_2
     public partial class Simulation : Form
     {
         // TODO:
-        // optimize shark move()
-        // Remove fish from PlayerPos List when killed
         // Add Method to "sense" nearby Fish
 
-
         // Initial Values
-        public static int NumberOfFish = 200;
-        public static int NumberOfSharks = 50;
-        public static IField[,] Field = new IField[40, 40];
+        public static int NumberOfFish = 400;
+        public static int NumberOfSharks = 250;
+        public static IField[,] Field = new IField[50, 50];
 
-        public PlayerPosition PlayerList = new PlayerPosition();
-        public static List<PlayerPosition> PlayerPos = new List<PlayerPosition> { };
-        // Move these to PlayerPosition.cs
-        public static List<PlayerPosition> PlayerPosAdd = new List<PlayerPosition> { };
-        public static List<PlayerPosition> PlayerPosRemove = new List<PlayerPosition> { };
+        public static List<PlayerPosition> PosList = new List<PlayerPosition> { };
+        public static List<PlayerPosition> PosToAdd = new List<PlayerPosition> { };
 
         public static Random rnd = new Random();
         public static readonly int ArrX = Field.GetLength(0);
         public static readonly int ArrY = Field.GetLength(1);
 
-        // Golden Ratio
-        private static int CellSize = 60 / (ArrX / 10);
-        private static int delayTime = CellSize / 1;
+        // Golden Ratios
+        private static int CellSize = 50 / (ArrX / 10);
+        private static int delayTime = 0;
 
         public Simulation()
         {
@@ -60,7 +54,7 @@ namespace WaTor_2
 
                 Field[rnd1, rnd2] = new Shark(rnd1, rnd2);
                 
-                PlayerPos.Add(new PlayerPosition { Type = "shark", X = rnd1, Y = rnd2 });
+                PosList.Add(new PlayerPosition { Type = "shark", X = rnd1, Y = rnd2 });
                 sharkCount++;
             }
 
@@ -74,7 +68,7 @@ namespace WaTor_2
                 } while (Field[rnd1, rnd2] != null);
 
                 Field[rnd1, rnd2] = new Fish(rnd1, rnd2);
-                PlayerPos.Add(new PlayerPosition { Type = "fish", X = rnd1, Y = rnd2 });
+                PosList.Add(new PlayerPosition { Type = "fish", X = rnd1, Y = rnd2 });
                 fishCount++;
             }
 
@@ -114,50 +108,50 @@ namespace WaTor_2
 
             while (NumberOfFish > 0 && NumberOfSharks > 0)
             {
-                PlayerPosAdd = new List<PlayerPosition>();
-                PlayerPosRemove = new List<PlayerPosition>();
+                PosToAdd = new List<PlayerPosition>();
 
-                foreach (PlayerPosition p in PlayerPos)
+                foreach (PlayerPosition p in PosList)
                 {
                     if (p.Type == "fish")
                     {
                         Fish fish = (Fish)Field[p.X, p.Y];
-                        fish.Move(ref Field, ref PlayerPosAdd, p);
+                        fish.Move(ref Field, ref PosToAdd, p);
                     }
                 }
 
-                PlayerPos.RemoveAll(p => p.Type == "dead");
-                PlayerPos.AddRange(PlayerPosAdd);
+                UpdatePositions();
 
-                foreach (PlayerPosition p in PlayerPos)
+                foreach (PlayerPosition p in PosList)
                 {
                     if (p.Type == "shark")
                     {
                         Shark shark = (Shark)Field[p.X, p.Y];
-                        shark.Move(ref Field, ref PlayerPosAdd, p);
+                        shark.Move(ref Field, ref PosToAdd, p);
                     }
                 }
-                PlayerPos.RemoveAll(p => p.Type == "dead");
-                PlayerPos.AddRange(PlayerPosAdd);
 
-                fishNumLabel.Text = NumberOfFish.ToString();
-                sharkNumLabel.Text = NumberOfSharks.ToString();
-                
+                UpdatePositions();
                 
                 Invalidate(r);
                 Update();
                 Task.Delay(delayTime).Wait();
             }
 
-            MessageBox.Show($"[Winner()] win!");
+            MessageBox.Show($"{Winner()} win!");
         }
 
-        public static void Killed(int PosX, int PosY) => PlayerPos.First(p => p.Type != "dead" && p.X == PosX && p.Y == PosY).Type = "dead";
-
-        private string Winner()
+        private void UpdatePositions()
         {
-            return NumberOfFish > NumberOfSharks ? "Fish" : "Sharks";
+            PosList.RemoveAll(p => p.Type == "dead");
+            PosList.AddRange(PosToAdd);
+
+            fishNumLabel.Text = NumberOfFish.ToString();
+            sharkNumLabel.Text = NumberOfSharks.ToString();
         }
+
+        public static void Killed(int PosX, int PosY) => PosList.First(p => p.Type != "dead" && p.X == PosX && p.Y == PosY).Type = "dead";
+
+        private static string Winner() => NumberOfFish > NumberOfSharks ? "Fish" : "Sharks";
 
         private void Simulation_Shown(object sender, EventArgs e) => GameLoop();
     }
