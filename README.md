@@ -2,4 +2,4 @@
 
 Info: https://beltoforion.de/en/wator/
 
-Currently can only be closed by IDE
+Can currently only be closed in IDE
